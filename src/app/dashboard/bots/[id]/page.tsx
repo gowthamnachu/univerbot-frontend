@@ -290,7 +290,8 @@ export default function BotDetailPage() {
         return
       }
 
-      const response = await fetch(`http://localhost:8000/bot/${botId}/storage`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${apiUrl}/bot/${botId}/storage`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }

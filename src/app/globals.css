@@ -1,0 +1,486 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 0 0% 100%;
+    --card: 222 47% 6%;
+    --card-foreground: 0 0% 100%;
+    --popover: 222 47% 6%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 187 100% 50%;
+    --primary-foreground: 222 47% 4%;
+    --secondary: 222 47% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 222 47% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 187 100% 50%;
+    --accent-foreground: 222 47% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 47% 18%;
+    --input: 222 47% 18%;
+    --ring: 187 100% 50%;
+    --radius: 0.5rem;
+    
+    --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+    --font-heading: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    letter-spacing: 0.02em;
+  }
+  
+  /* Professional heading styles */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: 0.03em;
+  }
+  
+  h1 {
+    @apply text-4xl font-semibold;
+  }
+  
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+  
+  h3 {
+    @apply text-xl font-semibold;
+  }
+  
+  h4 {
+    @apply text-lg font-medium;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Glow effect for accent elements */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.glow-cyan-strong {
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+}
+
+/* ======== ANIMATIONS ======== */
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Staggered animations */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+
+/* Scale in animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out forwards;
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out forwards;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Pulse glow animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 229, 255, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 229, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Gradient border */
+.gradient-border {
+  position: relative;
+  background: #0a0f1a;
+  border-radius: 0.75rem;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.5), rgba(0, 229, 255, 0.1), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(10, 15, 26, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Glow text */
+.text-glow {
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+}
+
+/* Background grid pattern */
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Gradient overlay */
+.gradient-overlay {
+  background: radial-gradient(ellipse at top, rgba(0, 229, 255, 0.1) 0%, transparent 50%);
+}
+
+/* Animated gradient background */
+@keyframes gradientMove {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animated-gradient {
+  background: linear-gradient(135deg, #030617, #0a0f1a, #030617);
+  background-size: 200% 200%;
+  animation: gradientMove 8s ease infinite;
+}
+
+/* Icon container hover */
+.icon-container {
+  transition: all 0.3s ease;
+}
+
+.icon-container:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+/* Active nav item */
+.nav-active {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), transparent);
+  border-left: 2px solid #00E5FF;
+}
+
+/* Stats card gradient */
+.stats-gradient {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.05), transparent);
+}
+
+/* Button shine effect */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-shine:hover::after {
+  left: 100%;
+}
+
+/* ======== REACT FLOW STYLES ======== */
+
+/* React Flow dark theme */
+.react-flow__background {
+  background-color: #030617 !important;
+}
+
+.react-flow__pane {
+  cursor: grab;
+}
+
+.react-flow__pane:active {
+  cursor: grabbing;
+}
+
+/* Selection box */
+.react-flow__selection {
+  background: rgba(0, 229, 255, 0.1) !important;
+  border: 1px dashed #00E5FF !important;
+}
+
+/* Edge styling */
+.react-flow__edge-path {
+  stroke: #00E5FF !important;
+  stroke-width: 2px;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #00E5FF !important;
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.5));
+}
+
+.react-flow__edge-interaction {
+  stroke-width: 20px;
+}
+
+/* Connection line */
+.react-flow__connection-line {
+  stroke: #00E5FF !important;
+  stroke-width: 3px;
+  stroke-dasharray: 5;
+}
+
+/* Controls panel */
+.react-flow__controls {
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.react-flow__controls-button {
+  background: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  color: #94a3b8 !important;
+  padding: 8px !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #334155 !important;
+  color: #00E5FF !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+  width: 14px;
+  height: 14px;
+}
+
+/* MiniMap */
+.react-flow__minimap {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(3, 6, 23, 0.8) !important;
+}
+
+/* Handle styling */
+.react-flow__handle {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  border: 2px solid #64748b !important;
+  background: #1e293b !important;
+  transition: all 0.2s ease;
+}
+
+.react-flow__handle:hover {
+  background: #00E5FF !important;
+  border-color: #00E5FF !important;
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+}
+
+.react-flow__handle.connecting {
+  background: #00E5FF !important;
+  animation: pulse 0.5s ease infinite;
+}
+
+/* Node base styling */
+.react-flow__node {
+  cursor: pointer !important;
+}
+
+.react-flow__node:focus {
+  outline: none !important;
+}
+
+.react-flow__node.selected > div {
+  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.5), 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Attribution (hide or style) */
+.react-flow__attribution {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  font-size: 10px !important;
+}
+
+.react-flow__attribution a {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Panel styling */
+.react-flow__panel {
+  margin: 12px !important;
+}

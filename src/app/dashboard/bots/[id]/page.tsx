@@ -41,6 +41,7 @@ import {
   ChevronRight,
   BookOpen,
   Layers,
+  AlertTriangle,
 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -221,6 +222,7 @@ export default function BotDetailPage() {
   const [viewingDocument, setViewingDocument] = useState<DocumentContent | null>(null)
   const [isLoadingDocument, setIsLoadingDocument] = useState(false)
   const [viewMode, setViewMode] = useState<'full' | 'chunks'>('full')
+  const [limitError, setLimitError] = useState<{ title: string; message: string } | null>(null)
 
   const botId = params.id as string
 
@@ -441,11 +443,16 @@ export default function BotDetailPage() {
             : `${file.name} uploaded successfully`,
         })
       } catch (error: any) {
-        toast({
-          title: 'Error',
-          description: error.message || `Failed to upload ${file.name}`,
-          variant: 'destructive',
-        })
+        const msg = error.message || `Failed to upload ${file.name}`
+        if (msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('exceeded') || msg.toLowerCase().includes('maximum')) {
+          setLimitError({ title: 'Upload Limit Reached', message: msg })
+        } else {
+          toast({
+            title: 'Error',
+            description: msg,
+            variant: 'destructive',
+          })
+        }
       }
     }
 
@@ -591,7 +598,19 @@ export default function BotDetailPage() {
               if (data.stage === 'complete') {
                 finalData = data
               } else if (data.stage === 'error') {
-                throw new Error(data.message)
+                const errorMsg = data.message || 'Scraping failed'
+                if (errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('exceeded') || errorMsg.toLowerCase().includes('maximum')) {
+                  setLimitError({ title: 'Limit Reached', message: errorMsg })
+                } else {
+                  toast({
+                    title: 'Error',
+                    description: errorMsg,
+                    variant: 'destructive',
+                  })
+                }
+                setIsScraping(false)
+                setScrapeProgress(null)
+                return
               }
             } catch (e) {
               // Ignore parse errors for incomplete chunks
@@ -623,11 +642,16 @@ export default function BotDetailPage() {
       fetchDocuments()
       fetchStorageStats()
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to scrape website',
-        variant: 'destructive',
-      })
+      const msg = error.message || 'Failed to scrape website'
+      if (msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('exceeded') || msg.toLowerCase().includes('maximum')) {
+        setLimitError({ title: 'Limit Reached', message: msg })
+      } else {
+        toast({
+          title: 'Error',
+          description: msg,
+          variant: 'destructive',
+        })
+      }
     } finally {
       setIsScraping(false)
       setScrapeProgress(null)
@@ -1182,13 +1206,19 @@ export default function BotDetailPage() {
                       ) : (
                         <ScrollArea className="h-[420px] pr-2">
                           <div className="space-y-3">
-                            {documents.map((doc, index) => (
+                            {documents.map((doc, index) => {
+                              // Truncate long filenames to ensure buttons are always visible
+                              const maxLen = 45;
+                              const displayName = doc.filename.length > maxLen 
+                                ? doc.filename.substring(0, maxLen) + '...' 
+                                : doc.filename;
+                              return (
                               <div
                                 key={doc.id}
-                                className="group relative overflow-x-auto overflow-y-hidden"
+                                className="group relative"
                                 style={{ animationDelay: `${index * 50}ms` }}
                               >
-                                <div className="flex items-center gap-4 p-4 pr-24 bg-gradient-to-r from-[#030617] to-[#030617]/50 rounded-xl border border-white/5 hover:border-cyan-500/30 hover:bg-[#030617]/80 transition-all duration-300 animate-fade-in-up"
+                                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-[#030617] to-[#030617]/50 rounded-xl border border-white/5 hover:border-cyan-500/30 hover:bg-[#030617]/80 transition-all duration-300 animate-fade-in-up"
                                 >
                                 {/* Left accent line */}
                                 <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-full transition-all duration-300 ${
@@ -1216,38 +1246,43 @@ export default function BotDetailPage() {
                                 </div>
                                 
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-white group-hover:text-cyan-50 transition-colors truncate">
-                                    {doc.filename}
+                                  <p className="text-sm font-medium text-white group-hover:text-cyan-50 transition-colors" title={doc.filename}>
+                                    {displayName}
                                   </p>
-                                  <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
-                                    <span className="text-xs text-gray-400 font-medium whitespace-nowrap flex-shrink-0">{formatFileSize(doc.file_size)}</span>
-                                    <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0" />
-                                    <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
+                                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                    <span className="text-xs text-gray-400 font-medium whitespace-nowrap">{formatFileSize(doc.file_size)}</span>
+                                    <span className="w-1 h-1 rounded-full bg-gray-600" />
+                                    <span className="text-xs text-gray-400 whitespace-nowrap">
                                       <span className="text-cyan-400 font-medium">{doc.chunk_count}</span> chunks
                                     </span>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold uppercase tracking-wide whitespace-nowrap flex-shrink-0 ${
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold uppercase tracking-wide whitespace-nowrap ${
                                       doc.file_type.includes('pdf') ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                                       doc.file_type.includes('html') ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' :
                                       doc.file_type.includes('doc') ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
                                       'bg-purple-500/10 text-purple-400 border border-purple-500/20'
                                     }`}>
-                                      {doc.file_type.includes('html') ? 'WEB' : doc.file_type.split('/').pop()?.toUpperCase() || 'FILE'}
+                                      {doc.file_type.includes('html') || doc.file_type.includes('web') || doc.file_type.includes('url') ? 'WEB' :
+                                       doc.file_type.includes('pdf') ? 'PDF' :
+                                       doc.file_type.includes('doc') || doc.file_type.includes('wordprocessing') ? 'DOCX' :
+                                       doc.file_type.includes('markdown') || doc.filename?.endsWith('.md') ? 'MD' :
+                                       doc.file_type.includes('text') || doc.filename?.endsWith('.txt') ? 'TXT' :
+                                       doc.filename?.split('.').pop()?.toUpperCase() || 'FILE'}
                                     </span>
                                   </div>
                                 </div>
                                 
-                                {/* Action buttons - absolutely positioned on the right */}
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gradient-to-l from-[#030617] via-[#030617] to-transparent pl-12 pr-2 pointer-events-none group-hover:pointer-events-auto">
+                                {/* Action buttons - always visible */}
+                                <div className="flex items-center gap-1 flex-shrink-0">
                                   <button
                                     onClick={() => handleViewDocument(doc.id)}
-                                    className="p-2.5 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-cyan-500/20 flex-shrink-0"
+                                    className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all duration-200 border border-white/5 hover:border-cyan-500/20"
                                     title="View content"
                                   >
                                     <Eye className="h-4 w-4" />
                                   </button>
                                   <button
                                     onClick={() => handleDeleteDocument(doc.id, doc.filename)}
-                                    className="p-2.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 border border-transparent hover:border-red-500/20 flex-shrink-0"
+                                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200 border border-white/5 hover:border-red-500/20"
                                     title="Delete document"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -1255,7 +1290,8 @@ export default function BotDetailPage() {
                                 </div>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </ScrollArea>
                       )}
@@ -1705,7 +1741,7 @@ export default function BotDetailPage() {
           setViewMode('full')
         }
       }}>
-        <DialogContent className="max-w-5xl max-h-[90vh] bg-[#0d1117] border border-[#30363d] text-white p-0 overflow-hidden rounded-lg shadow-xl [&>button]:hidden">
+        <DialogContent className="max-w-5xl max-h-[90vh] bg-[#0d1117] border border-[#30363d] text-white p-0 overflow-hidden rounded-lg shadow-xl [&>button]:hidden" style={{ width: '90vw' }}>
           {isLoadingDocument ? (
             <div className="flex items-center justify-center h-[450px]">
               <div className="flex flex-col items-center gap-3">
@@ -1714,7 +1750,7 @@ export default function BotDetailPage() {
               </div>
             </div>
           ) : viewingDocument && (
-            <div className="flex flex-col h-full max-h-[90vh]">
+            <div className="flex flex-col h-full max-h-[90vh] w-full overflow-hidden">
               {/* Header Bar */}
               <div className="flex items-center justify-between px-5 py-3 bg-[#161b22] border-b border-[#30363d] flex-shrink-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
@@ -1775,19 +1811,19 @@ export default function BotDetailPage() {
               </div>
               
               {/* Content Area */}
-              <div className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full max-h-[calc(90vh-140px)]">
-                  <div className="p-5">
+              <div className="flex-1 overflow-hidden w-full">
+                <ScrollArea className="h-full max-h-[calc(90vh-140px)] w-full">
+                  <div className="p-5 w-full max-w-full overflow-hidden">
                     {viewMode === 'full' ? (
                       <div className="bg-[#0d1117] border border-[#30363d] rounded-md overflow-hidden">
                         <div className="px-4 py-2.5 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between">
                           <span className="text-xs text-[#8b949e] font-medium">content.txt</span>
                           <span className="text-xs text-[#8b949e]">{viewingDocument.total_characters.toLocaleString()} characters</span>
                         </div>
-                        <div className="p-4 overflow-auto">
-                          <pre className="text-sm text-[#c9d1d9] whitespace-pre-wrap leading-6 font-mono">
+                        <div className="p-4 overflow-hidden max-w-full">
+                          <div className="text-sm text-[#c9d1d9] leading-6 font-mono whitespace-pre-wrap max-w-full" style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
                             {viewingDocument.full_content}
-                          </pre>
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -1804,10 +1840,10 @@ export default function BotDetailPage() {
                               </div>
                               <span className="text-xs text-[#8b949e]">{chunk.char_count.toLocaleString()} chars</span>
                             </div>
-                            <div className="p-4">
-                              <pre className="text-sm text-[#c9d1d9] whitespace-pre-wrap leading-6 font-mono">
+                            <div className="p-4 overflow-hidden max-w-full">
+                              <div className="text-sm text-[#c9d1d9] leading-6 font-mono whitespace-pre-wrap max-w-full" style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
                                 {chunk.content}
-                              </pre>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1819,13 +1855,13 @@ export default function BotDetailPage() {
               
               {/* Footer */}
               {viewingDocument.document.file_type.includes('html') && viewingDocument.document.file_path && (
-                <div className="px-5 py-3 bg-[#161b22] border-t border-[#30363d] flex items-center gap-2 flex-shrink-0">
+                <div className="px-5 py-3 bg-[#161b22] border-t border-[#30363d] flex items-center gap-2 flex-shrink-0 overflow-hidden">
                   <Globe className="h-3.5 w-3.5 text-[#8b949e] flex-shrink-0" />
                   <a 
                     href={viewingDocument.document.file_path} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-xs text-[#58a6ff] hover:underline truncate flex-1"
+                    className="text-xs text-[#58a6ff] hover:underline truncate flex-1 min-w-0"
                   >
                     {viewingDocument.document.file_path}
                   </a>
@@ -1834,6 +1870,74 @@ export default function BotDetailPage() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Limit Exceeded Modal */}
+      <Dialog open={!!limitError} onOpenChange={(open) => { if (!open) setLimitError(null) }}>
+        <DialogContent className="max-w-md bg-[#0d1117] border border-[#30363d] text-white p-0 overflow-hidden rounded-2xl shadow-2xl [&>button]:hidden">
+          <div className="flex flex-col items-center text-center px-8 py-10">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6">
+              <AlertTriangle className="h-8 w-8 text-amber-400" />
+            </div>
+            
+            {/* Title */}
+            <DialogTitle className="text-xl font-bold text-white mb-3 font-heading">
+              {limitError?.title || 'Limit Reached'}
+            </DialogTitle>
+            
+            {/* Message */}
+            <DialogDescription className="text-sm text-gray-400 leading-relaxed mb-2">
+              {limitError?.message}
+            </DialogDescription>
+            
+            {/* Usage info */}
+            {storageStats && (
+              <div className="w-full mt-4 mb-6 space-y-3">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] rounded-lg border border-[#30363d]">
+                  <span className="text-xs text-gray-400">Documents</span>
+                  <span className="text-xs font-medium">
+                    <span className={storageStats.usage.documents_remaining === 0 ? 'text-red-400' : 'text-cyan-400'}>
+                      {storageStats.usage.documents_used}
+                    </span>
+                    <span className="text-gray-500"> / {storageStats.limits.max_documents}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] rounded-lg border border-[#30363d]">
+                  <span className="text-xs text-gray-400">Websites</span>
+                  <span className="text-xs font-medium">
+                    <span className={storageStats.usage.websites_remaining === 0 ? 'text-red-400' : 'text-cyan-400'}>
+                      {storageStats.usage.websites_used}
+                    </span>
+                    <span className="text-gray-500"> / {storageStats.limits.max_websites}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#161b22] rounded-lg border border-[#30363d]">
+                  <span className="text-xs text-gray-400">Chunks</span>
+                  <span className="text-xs font-medium">
+                    <span className={storageStats.usage.chunks_remaining === 0 ? 'text-red-400' : 'text-cyan-400'}>
+                      {storageStats.usage.chunks_used}
+                    </span>
+                    <span className="text-gray-500"> / {storageStats.limits.max_chunks}</span>
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Hint */}
+            <p className="text-xs text-gray-500 mb-6">
+              Delete existing documents or websites to free up space, or upgrade your plan for higher limits.
+            </p>
+            
+            {/* Close button */}
+            <button
+              onClick={() => setLimitError(null)}
+              className="w-full py-2.5 px-4 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl text-sm font-medium transition-all duration-200"
+            >
+              Got it
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

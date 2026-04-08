@@ -25,31 +25,42 @@ export default function DashboardPage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
+        // Workaround for auth-helpers + custom Database type mismatch in this project.
+        const db = supabase as any
+
         // Fetch bots
-        const { data: botsData } = await supabase
+        const { data: botsDataRaw } = await db
           .from('bots')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
-        if (botsData) {
-          setBots(botsData)
-          setStats((prev) => ({ ...prev, totalBots: botsData.length }))
+        const botsData = (botsDataRaw || []) as any[]
+        const botIds = botsData
+          .map((b: any) => b?.id)
+          .filter((id: unknown): id is string => typeof id === 'string' && id.length > 0)
+
+        setBots(botsData as BotType[])
+        setStats((prev) => ({ ...prev, totalBots: botsData.length }))
+
+        if (botIds.length === 0) {
+          setStats((prev) => ({ ...prev, totalDocuments: 0, totalMessages: 0 }))
+          return
         }
 
         // Fetch documents count
-        const { count: docsCount } = await supabase
+        const { count: docsCount } = await db
           .from('documents')
           .select('*', { count: 'exact', head: true })
-          .in('bot_id', botsData?.map((b) => b.id) || [])
+          .in('bot_id', botIds)
 
         setStats((prev) => ({ ...prev, totalDocuments: docsCount || 0 }))
 
         // Fetch messages count
-        const { count: msgsCount } = await supabase
+        const { count: msgsCount } = await db
           .from('chat_messages')
           .select('*', { count: 'exact', head: true })
-          .in('bot_id', botsData?.map((b) => b.id) || [])
+          .in('bot_id', botIds)
 
         setStats((prev) => ({ ...prev, totalMessages: msgsCount || 0 }))
       } catch (error) {

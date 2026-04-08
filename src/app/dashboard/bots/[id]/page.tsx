@@ -194,8 +194,6 @@ interface DocumentContent {
   total_characters: number
 }
 
-type CrawlMode = 'single' | 'full-site'
-
 export default function BotDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -212,8 +210,6 @@ export default function BotDetailPage() {
   const [copiedId, setCopiedId] = useState(false)
   const [activeTab, setActiveTab] = useState('builder')
   const [websiteUrl, setWebsiteUrl] = useState('')
-  const [crawlMode, setCrawlMode] = useState<CrawlMode>('full-site')
-  const [maxPages, setMaxPages] = useState(10)
   const [storageStats, setStorageStats] = useState<StorageStats | null>(null)
   const [loadingStorage, setLoadingStorage] = useState(false)
   const [appearance, setAppearance] = useState<BotAppearance>(defaultAppearance)
@@ -550,14 +546,8 @@ export default function BotDetailPage() {
     }
 
     try {
-      // Choose endpoint based on crawl mode
-      const endpoint = crawlMode === 'full-site' 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/bot/${botId}/crawl-site`
-        : `${process.env.NEXT_PUBLIC_API_URL}/bot/${botId}/scrape-stream`
-      
-      const requestBody = crawlMode === 'full-site'
-        ? { url: websiteUrl, max_pages: maxPages }
-        : { url: websiteUrl }
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/bot/${botId}/scrape-stream`
+      const requestBody = { url: websiteUrl }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -621,21 +611,13 @@ export default function BotDetailPage() {
       
       if (finalData) {
         const chunkInfo = finalData.chunk_details
-        const crawlStats = finalData.crawl_stats
-        
-        if (crawlMode === 'full-site' && crawlStats) {
-          toast({
-            title: '✅ Site Crawled Successfully',
-            description: `Crawled ${crawlStats.pages_with_content} pages, created ${chunkInfo?.total_chunks || 0} chunks. ${chunkInfo?.chunks_remaining || 0} chunks remaining.`,
-          })
-        } else {
-          toast({
-            title: '✅ Website Scraped Successfully',
-            description: chunkInfo 
-              ? `Created ${chunkInfo.total_chunks} chunks (${chunkInfo.scraped_content_size_kb || chunkInfo.total_content_size_kb} KB → ${chunkInfo.estimated_total_storage_kb} KB storage). ${chunkInfo.chunks_remaining} chunks remaining.`
-              : 'Website content added to knowledge base',
-          })
-        }
+
+        toast({
+          title: '✅ Website Scraped Successfully',
+          description: chunkInfo 
+            ? `Created ${chunkInfo.total_chunks} chunks (${chunkInfo.scraped_content_size_kb || chunkInfo.total_content_size_kb} KB → ${chunkInfo.estimated_total_storage_kb} KB storage). ${chunkInfo.chunks_remaining} chunks remaining.`
+            : 'Website content added to knowledge base',
+        })
       }
 
       setWebsiteUrl('')
@@ -1011,38 +993,10 @@ export default function BotDetailPage() {
                       </div>
                       
                       <div className="space-y-4">
-                        {/* Crawl Mode Toggle */}
-                        <div className="flex gap-2 p-1 bg-white/5 rounded-lg">
-                          <button
-                            onClick={() => setCrawlMode('full-site')}
-                            disabled={isScraping}
-                            className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
-                              crawlMode === 'full-site'
-                                ? 'bg-cyan-500 text-[#030617]'
-                                : 'text-gray-400 hover:text-white'
-                            }`}
-                          >
-                            Full Site
-                          </button>
-                          <button
-                            onClick={() => setCrawlMode('single')}
-                            disabled={isScraping}
-                            className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
-                              crawlMode === 'single'
-                                ? 'bg-cyan-500 text-[#030617]'
-                                : 'text-gray-400 hover:text-white'
-                            }`}
-                          >
-                            Single Page
-                          </button>
-                        </div>
-
                         {/* URL Input */}
                         <Input
                           type="url"
-                          placeholder={crawlMode === 'full-site' 
-                            ? "https://example.com"
-                            : "https://example.com/page"}
+                          placeholder="https://example.com/page"
                           value={websiteUrl}
                           onChange={(e) => setWebsiteUrl(e.target.value)}
                           disabled={isScraping}
@@ -1050,25 +1004,6 @@ export default function BotDetailPage() {
                         />
                         
                         <div className="flex gap-3">
-                          {crawlMode === 'full-site' && (
-                            <select
-                              value={maxPages}
-                              onChange={(e) => setMaxPages(Number(e.target.value))}
-                              disabled={isScraping}
-                              className="w-32 h-12 px-3 bg-[#0a0f1a] border border-white/10 rounded-lg text-white text-sm cursor-pointer focus:outline-none focus:border-cyan-500/50 hover:border-white/20 transition-colors"
-                              style={{ 
-                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2300E5FF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, 
-                                backgroundRepeat: 'no-repeat', 
-                                backgroundPosition: 'right 12px center',
-                                appearance: 'none'
-                              }}
-                            >
-                              <option value={5} className="bg-[#0a0f1a] text-white">5 pages</option>
-                              <option value={10} className="bg-[#0a0f1a] text-white">10 pages</option>
-                              <option value={15} className="bg-[#0a0f1a] text-white">15 pages</option>
-                              <option value={20} className="bg-[#0a0f1a] text-white">20 pages</option>
-                            </select>
-                          )}
                           <button
                             onClick={handleScrapeWebsite}
                             disabled={isScraping || !websiteUrl}
@@ -1077,12 +1012,12 @@ export default function BotDetailPage() {
                             {isScraping ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                {crawlMode === 'full-site' ? 'Crawling...' : 'Scraping...'}
+                                Scraping...
                               </>
                             ) : (
                               <>
                                 <Globe className="h-4 w-4" />
-                                {crawlMode === 'full-site' ? 'Crawl Site' : 'Scrape Page'}
+                                Scrape Page
                               </>
                             )}
                           </button>
@@ -1129,9 +1064,7 @@ export default function BotDetailPage() {
                         )}
                         
                         <p className="text-xs text-gray-500">
-                          {crawlMode === 'full-site' 
-                            ? 'Discovers pages via sitemap or internal links'
-                            : 'Extracts text content from a single URL'}
+                          Extracts text content from a single URL
                         </p>
                       </div>
                     </div>

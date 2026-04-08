@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/use-toast'
 import { Bot, Loader2, ArrowLeft, Sparkles, Lightbulb, Wand2 } from 'lucide-react'
 import Link from 'next/link'
+import type { Bot as BotRow } from '@/types/database'
 
 export default function CreateBotPage() {
   const [name, setName] = useState('')
@@ -31,14 +32,27 @@ export default function CreateBotPage() {
     setIsLoading(true)
 
     try {
+      const trimmedName = name.trim()
+      if (!trimmedName) {
+        toast({
+          title: 'Error',
+          description: 'Bot name is required.',
+          variant: 'destructive',
+        })
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
         return
       }
 
+      // Workaround for auth-helpers + custom Database type mismatch in this project.
+      const db = supabase as any
+
       // Try to create profile if it doesn't exist (upsert)
-      await supabase
+      await db
         .from('profiles')
         .upsert({
           id: user.id,
@@ -51,11 +65,11 @@ export default function CreateBotPage() {
 
       const apiKey = generateApiKey()
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('bots')
         .insert({
           user_id: user.id,
-          name,
+          name: trimmedName,
           description,
           system_prompt: systemPrompt,
           api_key: apiKey,
@@ -65,18 +79,19 @@ export default function CreateBotPage() {
         .single()
 
       if (error) throw error
+      if (!data?.id) throw new Error('Bot was created but no ID was returned')
 
-      addBot(data)
+      addBot(data as BotRow)
       toast({
         title: 'Success',
         description: 'Bot created successfully!',
       })
       router.push(`/dashboard/bots/${data.id}`)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating bot:', error)
       toast({
         title: 'Error',
-        description: 'Failed to create bot. Please try again.',
+        description: error?.message || 'Failed to create bot. Please try again.',
         variant: 'destructive',
       })
     } finally {
